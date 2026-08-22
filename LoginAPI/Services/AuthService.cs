@@ -78,5 +78,26 @@ namespace LoginAPI.Services
             };
             
         }
+        public async Task<LoginResponseDto> RegisterAsync(RegisterRequestDto request)
+        {
+            if (await _context.Usuarios.AnyAsync(u => u.CorreoInstitucional == request.Correo))
+                return new LoginResponseDto { Message = "El correo ya existe.", Token = "" };
+
+            var user = new Usuario
+            {
+                CorreoInstitucional = request.Correo,
+                ContrasenaHash = request.Password,
+                Estado = "activo"
+            };
+            _context.Usuarios.Add(user);
+            await _context.SaveChangesAsync();
+
+            var userRol = new UsuarioRol { IdUsuario = user.IdUsuario, IdRol = request.IdRol };
+            _context.UsuarioRols.Add(userRol);
+            await _context.SaveChangesAsync();
+
+            return new LoginResponseDto { Message = "Usuario registrado exitosamente", Token = user.IdUsuario.ToString() }; // Truco: devolvemos el ID en el token para usarlo luego
+        }
     }
+
 }
